@@ -1,0 +1,286 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>🔒</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Aref+Ruqaa:wght@700&family=Great+Vibes&family=Cairo:wght@500;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --night: #170a1c;
+    --plum: #2e1233;
+    --rose: #ff3d71;
+    --blush: #ffb3c7;
+    --glow: #ffd9b0;
+    color-scheme: dark;
+  }
+
+  * { box-sizing: border-box; margin: 0; }
+  html, body { height: 100%; }
+
+  body {
+    background: radial-gradient(ellipse at 50% 42%, var(--plum) 0%, var(--night) 68%);
+    color: var(--blush);
+    font-family: "Cairo", "Noto Naskh Arabic", system-ui, sans-serif;
+    overflow: hidden;
+  }
+
+  /* Gate and word share the same spot; only one is visible at a time */
+  main {
+    min-height: 100%;
+    display: grid;
+    place-items: center;
+    padding: 1.5rem;
+  }
+  main > * { grid-area: 1 / 1; }
+
+  /* ---------- Gate ---------- */
+  .gate {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1rem;
+    width: min(100%, 22rem);
+    transition: opacity 0.7s ease, transform 0.7s ease;
+  }
+  .open .gate { opacity: 0; transform: translateY(12px); pointer-events: none; }
+
+  .lock { width: clamp(5rem, 24vw, 9rem); height: clamp(5rem, 24vw, 9rem); color: var(--blush); opacity: 0.8; margin-bottom: 0.8rem; }
+
+  .row { display: flex; gap: 0.6rem; width: 100%; }
+
+  input {
+    flex: 1;
+    min-width: 0;
+    padding: 0.85rem 1rem;
+    font: inherit;
+    font-size: 1rem; /* 16px avoids zoom on iOS */
+    color: #fff;
+    background: rgba(255, 255, 255, 0.07);
+    border: 1.5px solid rgba(255, 179, 199, 0.35);
+    border-radius: 0.9rem;
+    text-align: center;
+    letter-spacing: 0.08em;
+  }
+  input::placeholder { color: rgba(255, 179, 199, 0.55); letter-spacing: 0; }
+
+  button {
+    padding: 0.85rem 1.4rem;
+    font: inherit;
+    font-weight: 700;
+    color: #2a0a17;
+    background: var(--blush);
+    border: 0;
+    border-radius: 0.9rem;
+    cursor: pointer;
+  }
+  button:hover { background: var(--glow); }
+
+  input:focus-visible, button:focus-visible {
+    outline: 3px solid var(--glow);
+    outline-offset: 2px;
+  }
+
+  .msg { min-height: 1.5rem; font-size: 0.95rem; color: #ff9db6; }
+
+  .shake { animation: shake 0.42s; }
+  @keyframes shake {
+    20%, 60% { transform: translateX(-8px); }
+    40%, 80% { transform: translateX(8px); }
+  }
+
+  .sr {
+    position: absolute; width: 1px; height: 1px;
+    overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap;
+  }
+
+  /* ---------- The text (empty and invisible until unlock) ---------- */
+  .word {
+    font-family: "Aref Ruqaa", "Noto Naskh Arabic", "Amiri", serif;
+    font-weight: 700;
+    font-size: clamp(3rem, 12vw, 8rem);
+    line-height: 1.5;
+    padding: 0.1em 0.2em;
+    text-align: center;
+    background: linear-gradient(100deg,
+      var(--rose) 0%, var(--blush) 30%, var(--glow) 50%, var(--blush) 70%, var(--rose) 100%);
+    background-size: 250% 100%;
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    opacity: 0;
+    transition: opacity 1.2s ease;
+    user-select: none;
+    pointer-events: none;
+  }
+  .word.english {
+    font-family: "Great Vibes", "Dancing Script", cursive;
+    font-weight: 400;
+    font-size: clamp(5rem, 22vw, 14rem);
+  }
+  .word.show { opacity: 1; }
+  .open .word {
+    filter: drop-shadow(0 0 26px rgba(255, 61, 113, 0.55));
+    animation: beat 1.9s ease-in-out infinite, shimmer 5s linear infinite;
+  }
+
+  @keyframes beat {
+    0%, 100% { transform: scale(1); }
+    14%      { transform: scale(1.06); }
+    28%      { transform: scale(1); }
+    42%      { transform: scale(1.04); }
+    70%      { transform: scale(1); }
+  }
+  @keyframes shimmer {
+    from { background-position: 250% 0; }
+    to   { background-position: -250% 0; }
+  }
+
+  /* ---------- Hearts (created only after unlock) ---------- */
+  .hearts { position: fixed; inset: 0; pointer-events: none; overflow: hidden; }
+  .heart {
+    position: absolute;
+    bottom: -3rem;
+    color: var(--rose);
+    opacity: 0;
+    animation: rise linear forwards;
+  }
+  @keyframes rise {
+    0%   { transform: translateY(0) translateX(0) scale(0.7); opacity: 0; }
+    12%  { opacity: 0.85; }
+    100% { transform: translateY(-115vh) translateX(var(--drift)) scale(1.15); opacity: 0; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .open .word { animation: none; }
+    .heart { display: none; }
+  }
+</style>
+</head>
+<body>
+<main id="stage">
+  <div class="hearts" id="hearts" aria-hidden="true"></div>
+
+  <h1 class="word" id="word"></h1>
+
+  <div class="gate" id="gate">
+    <svg class="lock" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"
+         stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+      <rect x="4.5" y="10.5" width="15" height="10" rx="2.5"/>
+      <path d="M8 10.5V7.5a4 4 0 0 1 8 0v3"/>
+    </svg>
+    <label class="sr" for="pw">كلمة السر</label>
+    <div class="row">
+      <input id="pw" type="password" placeholder="كلمة السر" autocomplete="off" autofocus>
+      <button id="go" type="button">افتح</button>
+    </div>
+    <p class="msg" id="msg" role="alert"></p>
+  </div>
+</main>
+
+<script>
+  /* ------------------------------------------------------------
+     كلمة السر الحالية: mylove
+     الكلمة اللي هتظهر مش مكتوبة في الصفحة خالص، بتتحط بس بعد الباسورد الصح.
+     الموقع بيخزّن "بصمة" الباسورد مش الباسورد نفسه.
+     ------------------------------------------------------------ */
+  const SHA256_HASH = "fac445f594a545116747701d3a307109432735698cabeebf65f09ac5d343d78b";
+  const FALLBACK_HASH = "1517e611e16cf7"; // لو المتصفح مش بيدعم SHA-256
+  const PHRASES_B64 = ["2LXYrSDZitinINmF2YrZiNi02Yog4pml", "SSBsb3ZlIHlvdQ=="];
+
+  const stage = document.getElementById("stage");
+  const word = document.getElementById("word");
+  const pw = document.getElementById("pw");
+  const go = document.getElementById("go");
+  const msg = document.getElementById("msg");
+  const hearts = document.getElementById("hearts");
+
+  function cyrb53(str, seed = 0) {
+    let h1 = 0xdeadbeef ^ seed, h2 = 0x41c6ce57 ^ seed;
+    for (let i = 0, ch; i < str.length; i++) {
+      ch = str.charCodeAt(i);
+      h1 = Math.imul(h1 ^ ch, 2654435761);
+      h2 = Math.imul(h2 ^ ch, 1597334677);
+    }
+    h1 = Math.imul(h1 ^ (h1 >>> 16), 2246822507) ^ Math.imul(h2 ^ (h2 >>> 13), 3266489909);
+    h2 = Math.imul(h2 ^ (h2 >>> 16), 2246822507) ^ Math.imul(h1 ^ (h1 >>> 13), 3266489909);
+    return (4294967296 * (2097151 & h2) + (h1 >>> 0)).toString(16);
+  }
+
+  async function isCorrect(input) {
+    if (window.crypto && crypto.subtle) {
+      const buf = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(input));
+      const hex = [...new Uint8Array(buf)].map(b => b.toString(16).padStart(2, "0")).join("");
+      return hex === SHA256_HASH;
+    }
+    return cyrb53(input) === FALLBACK_HASH;
+  }
+
+  function phrase(i) {
+    const bytes = Uint8Array.from(atob(PHRASES_B64[i]), c => c.charCodeAt(0));
+    return new TextDecoder().decode(bytes);
+  }
+
+  // First phrase appears, fades out, then the English one appears and stays.
+  function playSequence() {
+    stage.classList.add("open");
+    word.textContent = phrase(0);
+    requestAnimationFrame(() => requestAnimationFrame(() => word.classList.add("show")));
+
+    setTimeout(() => word.classList.remove("show"), 4200);
+
+    setTimeout(() => {
+      word.textContent = phrase(1);
+      word.lang = "en";
+      word.dir = "ltr";
+      word.classList.add("english");
+      requestAnimationFrame(() => requestAnimationFrame(() => {
+        word.classList.add("show");
+        startHearts();
+      }));
+    }, 5600);
+  }
+
+  function spawnHeart() {
+    const h = document.createElement("span");
+    h.className = "heart";
+    h.textContent = "♥";
+    h.style.left = Math.random() * 100 + "vw";
+    h.style.fontSize = 14 + Math.random() * 30 + "px";
+    h.style.setProperty("--drift", (Math.random() * 120 - 60) + "px");
+    const dur = 6 + Math.random() * 6;
+    h.style.animationDuration = dur + "s";
+    hearts.appendChild(h);
+    setTimeout(() => h.remove(), dur * 1000 + 200);
+  }
+
+  function startHearts() {
+    for (let i = 0; i < 16; i++) setTimeout(spawnHeart, i * 140);
+    setInterval(spawnHeart, 650);
+  }
+
+  async function tryOpen() {
+    const value = pw.value.trim();
+    if (!value) { msg.textContent = "اكتب كلمة السر الأول."; return; }
+
+    if (await isCorrect(value)) {
+      msg.textContent = "";
+      pw.value = "";
+      pw.blur();
+      playSequence();
+    } else {
+      msg.textContent = "كلمة السر مش صحيحة، جرّب تاني.";
+      pw.classList.remove("shake");
+      void pw.offsetWidth;
+      pw.classList.add("shake");
+      pw.select();
+    }
+  }
+
+  go.addEventListener("click", tryOpen);
+  pw.addEventListener("keydown", e => { if (e.key === "Enter") tryOpen(); });
+</script>
+</body>
+</html>
